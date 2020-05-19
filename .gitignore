@@ -1,0 +1,18 @@
+#
+# Application specific files
+#
+.env
+google-service-account.json
+
+#
+# Node.js specific files
+#
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
