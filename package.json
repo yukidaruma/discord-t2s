@@ -4,8 +4,16 @@
   "description": "Text-to-speech bot for Discord",
   "main": "index.js",
   "scripts": {
+    "start": "node -r dotenv/config index.js",
+    "debug": "node -r dotenv/config --inspect-brk index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "yukidaruman (https://github.com/yukidaruma)",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@discordjs/opus": "^0.3.2",
+    "@google-cloud/text-to-speech": "^2.3.0",
+    "discord.js": "^12.2.0",
+    "dotenv": "^8.2.0"
+  }
 }
