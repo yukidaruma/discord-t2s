@@ -5,6 +5,10 @@ const fs = require('fs');
 const persistentStateKeys = ['listeningChannels'];
 const PERSISTENT_FILE = './data.json';
 
+const cleanText = (text) => {
+  return text.replace(/https?:\/\/\S+/g, '');
+}
+
 const persistState = (state) => {
   const data = {};
 
@@ -23,6 +27,7 @@ const restoreState = () => {
 };
 
 module.exports = {
+  cleanText,
   persistState,
   restoreState,
 };

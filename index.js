@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const registerCleanupHandler = require('node-cleanup');
-const { persistState, restoreState } = require('./helper');
+const { cleanText, persistState, restoreState } = require('./helper');
 const { text2speech } = require('./t2s');
 
 const client = new Discord.Client();
@@ -128,7 +128,9 @@ client.on('message', async (msg) => {
     console.log('Received message to channel listening.');
 
     if (msg.member.voice.mute) {
-      const { cleanContent: text } = msg;
+      let { cleanContent: text } = msg;
+      text = cleanText(text);
+
       console.log(`Speaking: ${text}`);
 
       if (state.voiceConnection) {
