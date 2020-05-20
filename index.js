@@ -108,7 +108,13 @@ client.on('message', async (msg) => {
     if (msg.member.voice.mute) {
       const { cleanContent: text } = msg;
       console.log(`Speaking: ${text}`);
-      state.voiceConnection.play(await text2speech(text));
+
+      if (state.voiceConnection) {
+        state.voiceConnection.play(await text2speech(text));
+      } else {
+        console.error('I\'m not in voice channel.');
+      }
+
       return;
     }
 
