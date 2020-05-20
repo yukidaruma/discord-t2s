@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node -r dotenv/config index.js",
     "debug": "node -r dotenv/config --inspect-brk index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "cli": "node -r dotenv/config cli.js"
   },
   "author": "yukidaruman (https://github.com/yukidaruma)",
   "license": "MIT",
