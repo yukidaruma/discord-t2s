@@ -30,6 +30,24 @@ const isMentioned = (msg) => {
 const bangCommand = (command) => `!${command}`;
 
 const internalCommands = {
+  /**
+   * @param {Discord.VoiceChannel} voiceChannel
+   */
+  async joinVoiceChannel(voiceChannel) {
+    console.log(`Connecting to voice channel: ${voiceChannel.name}...`);
+
+    const voiceConnection = await voiceChannel.join();
+    state.voiceConnection = voiceConnection;
+    console.log(`Connected to voice channel ${voiceChannel.name}.`)
+
+    voiceConnection.on('disconnect', () => {
+      console.log('Successfully disconnected from voice channel.');
+    });
+    voiceConnection.on('error', (_) => {
+      console.error('Voice connection error occured.');
+    });
+  },
+
   /** @param {Discord.VoiceChannel} voiceChannel */
   leave(voiceChannel) {
     voiceChannel.leave();
@@ -63,7 +81,7 @@ const commands = {
     const { channel: voiceChannel } = msg.member.voice;
 
     if (voiceChannel) {
-      state.voiceConnection = await voiceChannel.join();
+      await internalCommands.joinVoiceChannel(voiceChannel);
     } else {
       msg.reply('You have to be in a voice channel.');
     }
@@ -155,7 +173,7 @@ client.on('message', async (msg) => {
 });
 
 client.on('voiceStateUpdate', (from, to) => {
-  if (!state.voiceConnection) {
+  if (!(state.voiceConnection && state.voiceConnection.channel)) {
     return;
   }
 
@@ -168,6 +186,10 @@ client.on('voiceStateUpdate', (from, to) => {
     internalCommands.leave(channelWithBot);
   }
 });
+
+client.on('error', console.error);
+
+client.login(process.env.DISCORD_CLIENT_SECRET);
 
 const shutdown = () => {
   console.log('Received exit event. Stopping bot...');
@@ -184,5 +206,3 @@ const shutdown = () => {
 };
 
 registerCleanupHandler(shutdown);
-
-client.login(process.env.DISCORD_CLIENT_SECRET);
