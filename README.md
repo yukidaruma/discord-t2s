@@ -41,5 +41,6 @@ run `@YourBotName !kick` command to kick the bot at any time.
 
 ### List of available commands:
 * `!listen`, `!unlisten`: (un)listen to the channel
+* `!list`: List all channels the bot is listening
 * `!join`: Join the voice channel you are in
 * `!kick`: Kick from voice channel

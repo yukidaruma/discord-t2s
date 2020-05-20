@@ -74,6 +74,13 @@ const commands = {
       internalCommands.leave(voiceChannel);
     }
   },
+  list(msg) {
+    const channelNames = state.listeningChannels
+      .map((channelId) => `<#${channelId}>`)
+      .join(', ');
+
+    msg.reply(`I'm listening to ${state.listeningChannels.length} channels (${channelNames}).`);
+  },
   listen(msg) {
     const { id: channelId } = msg.channel;
     if (state.listeningChannels.includes(channelId)) {
