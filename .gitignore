@@ -3,6 +3,7 @@
 #
 .env
 google-service-account.json
+data.json
 
 #
 # Node.js specific files

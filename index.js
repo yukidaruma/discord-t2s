@@ -1,4 +1,6 @@
 const Discord = require('discord.js');
+const registerCleanupHandler = require('node-cleanup');
+const { persistState, restoreState } = require('./helper');
 const { text2speech } = require('./t2s');
 
 const client = new Discord.Client();
@@ -113,5 +115,16 @@ client.on('message', async (msg) => {
     console.log(`User ${msg.member.displayName} is not muted. Skipping.`);
   }
 });
+
+const shutdown = () => {
+  console.log('Received exit event. Stopping bot...');
+
+  console.log('Saving state to file...');
+  persistState(state);
+
+  console.log('See you again!');
+};
+
+registerCleanupHandler(shutdown);
 
 client.login(process.env.DISCORD_CLIENT_SECRET);
