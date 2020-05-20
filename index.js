@@ -34,7 +34,26 @@ const internalCommands = {
   leave(voiceChannel) {
     voiceChannel.leave();
     state.voiceConnection = null;
-  }
+  },
+
+  /** @param {string[]} listeningChannels */
+  setListeningChannels(listeningChannels) {
+    state.listeningChannels = listeningChannels;
+
+    const { length: count } = listeningChannels;
+    const presenceText = count === 0
+      ? 'Run `!listen`'
+      : `${count} channel(s)`;
+
+    console.log(`Updating presence text to: "${presenceText}".`)
+    client.user.setPresence({
+      activity: {
+        name: presenceText,
+        type: 'WATCHING',
+        url: process.env.BOT_PRESENCE_URL,
+      },
+    });
+  },
 };
 
 /** @typedef {(...message: Discord.Message[]) => void} OnMessageCallback */
@@ -62,13 +81,15 @@ const commands = {
       return;
     }
 
-    state.listeningChannels.push(channelId);
+    internalCommands.setListeningChannels([...state.listeningChannels, channelId]);
     msg.reply('I\'m now listening to this channel.');
   },
   unlisten(msg) {
     const { id: channelIdToRemove } = msg.channel;
     if (state.listeningChannels.includes(channelIdToRemove)) {
-      state.listeningChannels = state.listeningChannels.filter((channelId) => channelId !== channelIdToRemove);
+      internalCommands.setListeningChannels(
+        state.listeningChannels.filter((channelId) => channelId !== channelIdToRemove),
+      );
       msg.reply('I\'m no longer listening to this channel.');
     }
   },
@@ -79,6 +100,7 @@ const availableCommands = Object.keys(commands);
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
   state.myUserId = client.user.id;
+  internalCommands.setListeningChannels(state.listeningChannels);
 });
 
 client.on('message', async (msg) => {
