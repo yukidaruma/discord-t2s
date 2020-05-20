@@ -122,6 +122,21 @@ client.on('message', async (msg) => {
   }
 });
 
+client.on('voiceStateUpdate', (from, to) => {
+  if (!state.voiceConnection) {
+    return;
+  }
+
+  const channelWithBot = [from, to]
+    .find((voiceState) => voiceState.channel.id === state.voiceConnection.channel.id)
+    .channel;
+
+  // Leave when the bot becomes alone
+  if (channelWithBot.members.array().length <= 1) {
+    internalCommands.leave(channelWithBot);
+  }
+});
+
 const shutdown = () => {
   console.log('Received exit event. Stopping bot...');
 
