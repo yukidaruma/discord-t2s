@@ -125,6 +125,11 @@ client.on('message', async (msg) => {
 const shutdown = () => {
   console.log('Received exit event. Stopping bot...');
 
+  console.log('Leaving voice channel...');
+  if (state.voiceConnection) {
+    internalCommands.leave(state.voiceConnection.channel);
+  }
+
   console.log('Saving state to file...');
   persistState(state);
 
