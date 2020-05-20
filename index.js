@@ -92,13 +92,6 @@ const commands = {
       internalCommands.leave(voiceChannel);
     }
   },
-  list(msg) {
-    const channelNames = state.listeningChannels
-      .map((channelId) => `<#${channelId}>`)
-      .join(', ');
-
-    msg.reply(`I'm listening to ${state.listeningChannels.length} channels (${channelNames}).`);
-  },
   listen(msg) {
     const { id: channelId } = msg.channel;
     if (state.listeningChannels.includes(channelId)) {
@@ -108,6 +101,13 @@ const commands = {
 
     internalCommands.setListeningChannels([...state.listeningChannels, channelId]);
     msg.reply('I\'m now listening to this channel.');
+  },
+  list(msg) {
+    const channelNames = state.listeningChannels
+      .map((channelId) => `<#${channelId}>`)
+      .join(', ');
+
+    msg.reply(`I'm listening to ${state.listeningChannels.length} channels (${channelNames}).`);
   },
   unlisten(msg) {
     const { id: channelIdToRemove } = msg.channel;
@@ -121,6 +121,8 @@ const commands = {
 };
 
 const availableCommands = Object.keys(commands);
+const commandPattern = /(?:^| )!(\w+)/;
+const availableCommandsText = `Available commands: ${availableCommands.map(bangCommand).join(', ')}.`;
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -137,15 +139,22 @@ client.on('message', async (msg) => {
   // React to mentions
   if (isMentioned(msg)) {
     const lowercased = msg.cleanContent.toLocaleLowerCase();
-    const command = availableCommands.find((command) => lowercased.includes(bangCommand(command)));
+    const matches = lowercased.match(commandPattern);
+    if (matches) {
+      const commandName = matches[1];
+      const command = commands[commandName];
 
-    if (command) {
-      console.log(`Running command: ${command}`);
-      commands[command](msg);
+      if (command) {
+        console.log(`Running command: ${commandName}`);
+        command(msg);
+        return;
+      }
+
+      msg.reply(`Invalid command \`${commandName}\`. ${availableCommandsText}`);
       return;
     }
 
-    msg.reply(`No command specified. Available commands: ${availableCommands.map(bangCommand).join(', ')}.`);
+    msg.reply(`No command specified. ${availableCommandsText}`);
     return;
   }
 
