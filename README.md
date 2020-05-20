@@ -8,7 +8,17 @@
    cd discord-t2s
    npm i
    ```
-2. Invite the bot to your server.
+3. Configure `DISCORD_CLIENT_SECRET` via `.env` file (or use environmental variables).
+   ```sh
+   # Using `.env` file
+   cp .env.example .env
+   $EDITOR .env
+   # Update `DISCORD_CLIENT_SECRET`.
+   ```
+4. Set up [Google Cloud Text-to-Speech service account](https://www.npmjs.com/package/@google-cloud/text-to-speech#quickstart).
+   Download "Service account .json file", rename it to `google-service-account.json`
+   and place it in the directory where this "README.md" is located.
+5. Invite the bot to your server.
    ```sh
    # You can obtain your `bot_client_id` at your app's "General Information" page
    npm run cli -- link <bot_client_id>
@@ -33,5 +43,3 @@ run `@YourBotName !kick` command to kick the bot at any time.
 * `!listen`, `!unlisten`: (un)listen to the channel
 * `!join`: Join the voice channel you are in
 * `!kick`: Kick from voice channel
-
-
