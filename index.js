@@ -118,7 +118,8 @@ client.on('message', async (msg) => {
 
   // React to mentions
   if (isMentioned(msg)) {
-    const command = availableCommands.find((command) => msg.cleanContent.includes(bangCommand(command)));
+    const lowercased = msg.cleanContent.toLocaleLowerCase();
+    const command = availableCommands.find((command) => lowercased.includes(bangCommand(command)));
 
     if (command) {
       console.log(`Running command: ${command}`);
