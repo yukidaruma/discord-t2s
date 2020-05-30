@@ -182,13 +182,13 @@ client.on('message', async (msg) => {
 });
 
 client.on('voiceStateUpdate', (from, to) => {
-  if (!(state.voiceConnection && state.voiceConnection.channel)) {
+  if (!state.voiceConnection?.channel) {
     return;
   }
 
   const channelWithBot = [from, to]
-    .find((voiceState) => voiceState.channel && (voiceState.channel.id === state.voiceConnection.channel.id))
-    .channel;
+    .find((voiceState) => voiceState.channel?.id === state.voiceConnection.channel.id)
+    ?.channel;
 
   // Leave when the bot becomes alone
   if (channelWithBot && channelWithBot.members.array().length <= 1) {
