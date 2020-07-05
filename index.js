@@ -166,6 +166,11 @@ client.on('message', async (msg) => {
       let { cleanContent: text } = msg;
       text = cleanText(text);
 
+      if (text.length === 0) {
+        console.log('Skipping empty message.');
+        return;
+      }
+
       console.log(`Speaking: ${text}`);
 
       if (state.voiceConnection) {

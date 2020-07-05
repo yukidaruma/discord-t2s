@@ -6,7 +6,10 @@ const persistentStateKeys = ['listeningChannels'];
 const PERSISTENT_FILE = './data.json';
 
 const cleanText = (text) => {
-  return text.replace(/https?:\/\/\S+/g, '');
+  return text
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/[\s\n　]/g, '')
+    .trim();
 }
 
 const persistState = (state) => {
