@@ -10,6 +10,7 @@ const client = new Discord.Client();
   listeningChannels: string[];
   myUserId: string;
   voiceConnection: Discord.VoiceConnection|null;
+  speed: number;
 }} State
 */
 /** @type {State} */
@@ -17,6 +18,7 @@ const state = restoreState() || {
   listeningChannels: [],
   myUserId: '',
   voiceConnection: null,
+  speed: 1.0,
 };
 
 /** @param {Discord.Message} msg */
@@ -116,6 +118,13 @@ const commands = {
         state.listeningChannels.filter((channelId) => channelId !== channelIdToRemove),
       );
       msg.reply('I\'m no longer listening to this channel.');
+  },
+  speed(msg) {
+    const parts = msg.content.split(' ');
+    const speed = Number(parts[parts.length - 1]);
+    if (!Number.isNaN(speed)) {
+      state.speed = speed;
+      msg.reply(`Updated speed to ${state.speed}.`);
     }
   },
 };

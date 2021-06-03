@@ -6,12 +6,13 @@ const client = new t2s.TextToSpeechClient({
 });
 
 /** @returns {Promise<Readable>} audio */
-const text2speech = async (text) => {
+const text2speech = async (text, speed) => {
   const [response] = await client.synthesizeSpeech({
     input: { text },
     voice: { languageCode: process.env.T2S_LANGUAGE_CODE },
     audioConfig: {
       audioEncoding: 'MP3',
+      speakingRate: speed,
       volumeGainDb: Number(process.env.VOLUME_GAIN_DB),
     },
   });
