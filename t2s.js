@@ -13,7 +13,9 @@ const text2speech = async (text, speed) => {
     audioConfig: {
       audioEncoding: 'MP3',
       speakingRate: speed,
-      volumeGainDb: Number(process.env.VOLUME_GAIN_DB),
+      volumeGainDb: process.env.VOLUME_GAIN_DB
+        ? Number(process.env.VOLUME_GAIN_DB)
+        : undefined,
     },
   });
   const { audioContent: audio } = response;
