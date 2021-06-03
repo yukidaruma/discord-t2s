@@ -33,14 +33,15 @@
 2. Run `@YourBotName !join` to summon the bot in the voice channel you are in.
 3. When bot is in the voice channel, it will speak texts if following conditions
    are met:
-   * The message is posted by an user that is muted.
-   * The channel that the message is posted in is listened by the bot.
+   - The message is posted by an user that is muted.
+   - The channel that the message is posted in is listened by the bot.
 
 Note: Bot automatically leaves the channel when it becomes alone. You can also
 run `@YourBotName !kick` command to kick the bot at any time.
 
 ### List of available commands:
-* `!listen`, `!unlisten`: (un)listen to the channel
-* `!list`: List all channels the bot is listening
-* `!join`: Join the voice channel you are in
-* `!kick`: Kick from voice channel
+
+- `!listen`, `!unlisten`: (un)listen to the channel
+- `!list`: List all channels the bot is listening
+- `!join`: Join the voice channel you are in
+- `!kick`: Kick from voice channel

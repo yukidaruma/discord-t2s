@@ -27,7 +27,7 @@ const isMentioned = (msg) => {
   const mentionedUser = msg.mentions.users.first();
 
   return mentionedUser && mentionedUser.id === state.myUserId;
-}
+};
 
 const bangCommand = (command) => `!${command}`;
 
@@ -40,7 +40,7 @@ const internalCommands = {
 
     const voiceConnection = await voiceChannel.join();
     state.voiceConnection = voiceConnection;
-    console.log(`Connected to voice channel ${voiceChannel.name}.`)
+    console.log(`Connected to voice channel ${voiceChannel.name}.`);
 
     voiceConnection.on('disconnect', () => {
       console.log('Successfully disconnected from voice channel.');
@@ -61,11 +61,9 @@ const internalCommands = {
     state.listeningChannels = listeningChannels;
 
     const { length: count } = listeningChannels;
-    const presenceText = count === 0
-      ? 'Run `!listen`'
-      : `${count} channel(s)`;
+    const presenceText = count === 0 ? 'Run `!listen`' : `${count} channel(s)`;
 
-    console.log(`Updating presence text to: "${presenceText}".`)
+    console.log(`Updating presence text to: "${presenceText}".`);
     client.user.setPresence({
       activity: {
         name: presenceText,
@@ -97,17 +95,15 @@ const commands = {
   listen(msg) {
     const { id: channelId } = msg.channel;
     if (state.listeningChannels.includes(channelId)) {
-      msg.reply('I\'m already listening to this channel.');
+      msg.reply("I'm already listening to this channel.");
       return;
     }
 
     internalCommands.setListeningChannels([...state.listeningChannels, channelId]);
-    msg.reply('I\'m now listening to this channel.');
+    msg.reply("I'm now listening to this channel.");
   },
   list(msg) {
-    const channelNames = state.listeningChannels
-      .map((channelId) => `<#${channelId}>`)
-      .join(', ');
+    const channelNames = state.listeningChannels.map((channelId) => `<#${channelId}>`).join(', ');
 
     msg.reply(`I'm listening to ${state.listeningChannels.length} channels (${channelNames}).`);
   },
@@ -117,7 +113,8 @@ const commands = {
       internalCommands.setListeningChannels(
         state.listeningChannels.filter((channelId) => channelId !== channelIdToRemove),
       );
-      msg.reply('I\'m no longer listening to this channel.');
+      msg.reply("I'm no longer listening to this channel.");
+    }
   },
   speed(msg) {
     const parts = msg.content.split(' ');
@@ -131,9 +128,12 @@ const commands = {
 
 const availableCommands = Object.keys(commands);
 const commandPattern = /(?:^| )!(\w+)/;
-const availableCommandsText = `Available commands: ${availableCommands.map(bangCommand).join(', ')}.`;
+const availableCommandsText = `Available commands: ${availableCommands
+  .map(bangCommand)
+  .join(', ')}.`;
 
 client.on('ready', () => {
+  console.log(client.user.id);
   console.log(`Logged in as ${client.user.tag}!`);
   state.myUserId = client.user.id;
   internalCommands.setListeningChannels(state.listeningChannels);
@@ -183,9 +183,9 @@ client.on('message', async (msg) => {
       console.log(`Speaking: ${text}`);
 
       if (state.voiceConnection) {
-        state.voiceConnection.play(await text2speech(text));
+        state.voiceConnection.play(await text2speech(text, state.speed));
       } else {
-        console.error('I\'m not in voice channel.');
+        console.error("I'm not in voice channel.");
       }
 
       return;
@@ -200,9 +200,9 @@ client.on('voiceStateUpdate', (from, to) => {
     return;
   }
 
-  const channelWithBot = [from, to]
-    .find((voiceState) => voiceState.channel?.id === state.voiceConnection.channel.id)
-    ?.channel;
+  const channelWithBot = [from, to].find(
+    (voiceState) => voiceState.channel?.id === state.voiceConnection.channel.id,
+  )?.channel;
 
   // Leave when the bot becomes alone
   if (channelWithBot && channelWithBot.members.array().length <= 1) {
