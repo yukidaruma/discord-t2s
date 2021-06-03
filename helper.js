@@ -6,9 +6,14 @@ const persistentStateKeys = ['listeningChannels'];
 const PERSISTENT_FILE = './data.json';
 
 const cleanText = (text) => {
+  // Remove whitespaces for Japanese text to save some oost.
+  const whiteSpaceReplacer = process.env.T2S_LANGUAGE_CODE.startsWith('ja')
+    ? ''
+    : ' ';
+
   return text
     .replace(/https?:\/\/\S+/g, '')
-    .replace(/[\s\n　]/g, '')
+    .replace(/[\s\n　]/g, whiteSpaceReplacer)
     .trim();
 }
 
