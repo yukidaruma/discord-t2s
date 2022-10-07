@@ -1,15 +1,28 @@
 const Discord = require('discord.js');
+const {
+  joinVoiceChannel,
+  VoiceConnectionStatus,
+  getVoiceConnection,
+  createAudioPlayer,
+  createAudioResource,
+  StreamType,
+} = require('@discordjs/voice');
 const registerCleanupHandler = require('node-cleanup');
 const { cleanText, persistState, restoreState } = require('./helper');
 const { text2speech } = require('./t2s');
 
-const client = new Discord.Client();
+const client = new Discord.Client({
+  intents: ['MessageContent', 'Guilds', 'GuildMessages', 'GuildVoiceStates'],
+});
+
+const audioPlayer = createAudioPlayer();
 
 /**
 @typedef {{
   listeningChannels: string[];
   myUserId: string;
-  voiceConnection: Discord.VoiceConnection|null;
+  voiceConnection: import('@discordjs/voice').VoiceConnection|null;
+  voiceChannelId: string|null;
   speed: number;
 }} State
 */
@@ -18,6 +31,7 @@ const state = restoreState() || {
   listeningChannels: [],
   myUserId: '',
   voiceConnection: null,
+  voiceChannelId: null,
   speed: 1.0,
 };
 
@@ -36,23 +50,46 @@ const internalCommands = {
    * @param {Discord.VoiceChannel} voiceChannel
    */
   async joinVoiceChannel(voiceChannel) {
-    console.log(`Connecting to voice channel: ${voiceChannel.name}...`);
+    const exisitngConnection = getVoiceConnection(voiceChannel.guildId);
+    if (exisitngConnection?.state?.status === VoiceConnectionStatus.Ready) {
+      console.log('Reusing existing voice connection.');
+      state.voiceConnection = exisitngConnection;
+      state.voiceChannelId = voiceChannel.id;
+    } else {
+      console.log(`Connecting to voice channel: ${voiceChannel.name}...`);
 
-    const voiceConnection = await voiceChannel.join();
-    state.voiceConnection = voiceConnection;
-    console.log(`Connected to voice channel ${voiceChannel.name}.`);
+      const voiceConnection = joinVoiceChannel({
+        channelId: voiceChannel.id,
+        guildId: voiceChannel.guildId,
+        adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+      });
+      voiceConnection.subscribe(audioPlayer);
 
-    voiceConnection.on('disconnect', () => {
-      console.log('Successfully disconnected from voice channel.');
-    });
-    voiceConnection.on('error', (_) => {
-      console.error('Voice connection error occured.');
-    });
+      voiceConnection.on('stateChange', async (_oldState, newState) => {
+        switch (newState.status) {
+          case VoiceConnectionStatus.Ready:
+            state.voiceConnection = voiceConnection;
+            state.voiceChannelId = voiceChannel.id;
+            console.log('Voice connection is now ready.');
+            break;
+
+          case VoiceConnectionStatus.Disconnected:
+            console.log(`Disconnected from voice channel: ${voiceChannel.name}.`);
+            internalCommands.leave();
+            state.voiceConnection = null;
+            break;
+        }
+
+        // console.log(`VoiceConnection.stateChange: ${newState.status}`);
+      });
+      voiceConnection.on('error', (_) => {
+        console.error('Voice connection error occured.');
+      });
+    }
   },
 
-  /** @param {Discord.VoiceChannel} voiceChannel */
-  leave(voiceChannel) {
-    voiceChannel.leave();
+  leave() {
+    state.voiceConnection.destroy();
     state.voiceConnection = null;
   },
 
@@ -87,9 +124,8 @@ const commands = {
     }
   },
   kick(msg) {
-    const { channel: voiceChannel } = msg.guild.me.voice;
-    if (voiceChannel) {
-      internalCommands.leave(voiceChannel);
+    if (state.voiceConnection) {
+      internalCommands.leave();
     }
   },
   listen(msg) {
@@ -139,7 +175,7 @@ client.on('ready', () => {
   internalCommands.setListeningChannels(state.listeningChannels);
 });
 
-client.on('message', async (msg) => {
+client.on('messageCreate', async (msg) => {
   // Ignore own messages
   if (msg.member.id === state.myUserId) {
     return;
@@ -183,7 +219,14 @@ client.on('message', async (msg) => {
       console.log(`Speaking: ${text}`);
 
       if (state.voiceConnection) {
-        state.voiceConnection.play(await text2speech(text, state.speed));
+        try {
+          const audio = createAudioResource(await text2speech(text, state.speed), {
+            inputType: StreamType.OggOpus,
+          });
+          audioPlayer.play(audio);
+        } catch (e) {
+          console.log('Failed to play audio.');
+        }
       } else {
         console.error("I'm not in voice channel.");
       }
@@ -196,17 +239,17 @@ client.on('message', async (msg) => {
 });
 
 client.on('voiceStateUpdate', (from, to) => {
-  if (!state.voiceConnection?.channel) {
+  if (!state.voiceConnection) {
     return;
   }
 
   const channelWithBot = [from, to].find(
-    (voiceState) => voiceState.channel?.id === state.voiceConnection.channel.id,
+    (voiceState) => voiceState.channel?.id === state.voiceChannelId,
   )?.channel;
 
   // Leave when the bot becomes alone
-  if (channelWithBot && channelWithBot.members.array().length <= 1) {
-    internalCommands.leave(channelWithBot);
+  if (channelWithBot && Array.from(channelWithBot.members).length <= 1) {
+    internalCommands.leave();
   }
 });
 
@@ -217,9 +260,9 @@ client.login(process.env.DISCORD_CLIENT_SECRET);
 const shutdown = () => {
   console.log('Received exit event. Stopping bot...');
 
-  console.log('Leaving voice channel...');
   if (state.voiceConnection) {
-    internalCommands.leave(state.voiceConnection.channel);
+    console.log('Leaving voice channel...');
+    internalCommands.leave();
   }
 
   console.log('Saving state to file...');

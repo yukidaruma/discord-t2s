@@ -5,17 +5,19 @@
   "main": "index.js",
   "scripts": {
     "start": "node -r dotenv/config index.js",
-    "debug": "node -r dotenv/config --inspect-brk index.js",
+    "debug": "node -r dotenv/config index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "cli": "node -r dotenv/config cli.js"
   },
   "author": "yukidaruman (https://github.com/yukidaruma)",
   "license": "MIT",
   "dependencies": {
-    "@discordjs/opus": "^0.5.0",
+    "@discordjs/opus": "^0.8.0",
+    "@discordjs/voice": "^0.11.0",
     "@google-cloud/text-to-speech": "^3.2.1",
-    "discord.js": "^12.5.3",
+    "discord.js": "^14.5.0",
     "dotenv": "^10.0.0",
+    "libsodium-wrappers": "^0.7.10",
     "node-cleanup": "^2.1.2"
   }
 }
