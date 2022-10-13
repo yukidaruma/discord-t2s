@@ -12,6 +12,7 @@ const cleanText = (text) => {
   return text
     .replace(/https?:\/\/\S+/g, '')
     .replace(/[\s\n　]/g, whiteSpaceReplacer)
+    .replace(/(<a?)?:\w+:(\d{18}>)?/g, '')
     .trim();
 };
 
