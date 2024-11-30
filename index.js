@@ -185,6 +185,7 @@ client.on('messageCreate', async (msg) => {
   if (isMentioned(msg)) {
     const lowercased = msg.cleanContent.toLocaleLowerCase();
     const matches = lowercased.match(commandPattern);
+
     if (matches) {
       const commandName = matches[1];
       const command = commands[commandName];
@@ -210,6 +211,12 @@ client.on('messageCreate', async (msg) => {
     if (msg.member.voice.mute) {
       let { cleanContent: text } = msg;
       text = cleanText(text);
+
+      // If the message starts with '.', skip it.
+      if (text.startsWith('.')) {
+        console.log('Skipping message starting with ".".');
+        return;
+      }
 
       if (text.length === 0) {
         console.log('Skipping empty message.');

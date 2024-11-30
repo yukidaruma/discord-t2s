@@ -1,20 +1,17 @@
 const Discord = require('discord.js');
 
+/** @type {Discord.GatewayIntentsString[]} */
 const requiredPermissions = [
   // General permissions
-  'VIEW_CHANNEL',
-
-  // Text permissions
-  'FLAGS.READ_MESSAGE_HISTORY',
+  'GuildMessages',
 
   // Voice permissions
-  'CONNECT',
-  'SPEAK',
+  'GuildVoiceStates',
 ];
 
 /** @returns {number} */
 const getPermissionFlag = () => {
-  const permissionFlags = Object.entries(Discord.Permissions.FLAGS)
+  const permissionFlags = Object.entries(Discord.PermissionFlagsBits)
     .filter(([key, _]) => requiredPermissions.includes(key))
     .map(([_, value]) => value)
     .reduce((sum, flag) => (sum += flag), 0);
