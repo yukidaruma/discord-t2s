@@ -1,6 +1,7 @@
 {
   "name": "discord-t2s",
   "version": "0.0.1",
+  "private": true,
   "description": "Text-to-speech bot for Discord",
   "main": "index.js",
   "scripts": {

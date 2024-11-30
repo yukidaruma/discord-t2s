@@ -13,117 +13,149 @@ const client = new Discord.Client();
   speed: number;
 }} State
 */
-/** @type {State} */
-const state = restoreState() || {
+
+/** @type {Record<string, ServerBot>} */
+const botInstances = {};
+
+/** @type {Record<string, State>} */
+const states = restoreState() || {};
+
+const createDefaultState = () => ({
   listeningChannels: [],
   myUserId: '',
   voiceConnection: null,
   speed: 1.0,
-};
-
-/** @param {Discord.Message} msg */
-/** @returns {boolean} */
-const isMentioned = (msg) => {
-  const mentionedUser = msg.mentions.users.first();
-
-  return mentionedUser && mentionedUser.id === state.myUserId;
-};
+});
 
 const bangCommand = (command) => `!${command}`;
 
-const internalCommands = {
+// Server-scoped bot class
+class ServerBot {
+  constructor(serverId) {
+    if (states[serverId]) {
+      state = states[serverId] ?? createDefaultState();
+    }
+
+    this.state = state;
+    this.commands = createCommands(state);
+  }
+
   /**
-   * @param {Discord.VoiceChannel} voiceChannel
+   * @param {Discord.Message} msg
+   * @returns {boolean}
    */
-  async joinVoiceChannel(voiceChannel) {
-    console.log(`Connecting to voice channel: ${voiceChannel.name}...`);
+  isMentioned(msg) {
+    const mentionedUser = msg.mentions.users.first();
 
-    const voiceConnection = await voiceChannel.join();
-    state.voiceConnection = voiceConnection;
-    console.log(`Connected to voice channel ${voiceChannel.name}.`);
-
-    voiceConnection.on('disconnect', () => {
-      console.log('Successfully disconnected from voice channel.');
-    });
-    voiceConnection.on('error', (_) => {
-      console.error('Voice connection error occured.');
-    });
-  },
-
-  /** @param {Discord.VoiceChannel} voiceChannel */
-  leave(voiceChannel) {
-    voiceChannel.leave();
-    state.voiceConnection = null;
-  },
-
-  /** @param {string[]} listeningChannels */
-  setListeningChannels(listeningChannels) {
-    state.listeningChannels = listeningChannels;
-
-    const { length: count } = listeningChannels;
-    const presenceText = count === 0 ? 'Run `!listen`' : `${count} channel(s)`;
-
-    console.log(`Updating presence text to: "${presenceText}".`);
-    client.user.setPresence({
-      activity: {
-        name: presenceText,
-        type: 'WATCHING',
-        url: process.env.BOT_PRESENCE_URL,
-      },
-    });
-  },
-};
+    return mentionedUser && mentionedUser.id === this.state.myUserId;
+  }
+}
 
 /** @typedef {(...message: Discord.Message[]) => void} OnMessageCallback */
-/** @type {Object<string, OnMessageCallback>} */
-const commands = {
-  async join(msg) {
-    const { channel: voiceChannel } = msg.member.voice;
+const createCommands = (/** @type {State} */ state) => {
+  const internalCommands = {
+    /**
+     * @param {Discord.VoiceChannel} voiceChannel
+     */
+    async _joinVoiceChannel(voiceChannel) {
+      console.log(`Connecting to voice channel: ${voiceChannel.name}...`);
 
-    if (voiceChannel) {
-      await internalCommands.joinVoiceChannel(voiceChannel);
-    } else {
-      msg.reply('You have to be in a voice channel.');
-    }
-  },
-  kick(msg) {
-    const { channel: voiceChannel } = msg.guild.me.voice;
-    if (voiceChannel) {
-      internalCommands.leave(voiceChannel);
-    }
-  },
-  listen(msg) {
-    const { id: channelId } = msg.channel;
-    if (state.listeningChannels.includes(channelId)) {
-      msg.reply("I'm already listening to this channel.");
-      return;
-    }
+      const voiceConnection = await voiceChannel.join();
+      state.voiceConnection = voiceConnection;
+      console.log(`Connected to voice channel ${voiceChannel.name}.`);
 
-    internalCommands.setListeningChannels([...state.listeningChannels, channelId]);
-    msg.reply("I'm now listening to this channel.");
-  },
-  list(msg) {
-    const channelNames = state.listeningChannels.map((channelId) => `<#${channelId}>`).join(', ');
+      voiceConnection.on('disconnect', () => {
+        console.log('Successfully disconnected from voice channel.');
+      });
+      voiceConnection.on('error', (_) => {
+        console.error('Voice connection error occured.');
+      });
+    },
 
-    msg.reply(`I'm listening to ${state.listeningChannels.length} channels (${channelNames}).`);
-  },
-  unlisten(msg) {
-    const { id: channelIdToRemove } = msg.channel;
-    if (state.listeningChannels.includes(channelIdToRemove)) {
-      internalCommands.setListeningChannels(
-        state.listeningChannels.filter((channelId) => channelId !== channelIdToRemove),
-      );
-      msg.reply("I'm no longer listening to this channel.");
-    }
-  },
-  speed(msg) {
-    const parts = msg.content.split(' ');
-    const speed = Number(parts[parts.length - 1]);
-    if (!Number.isNaN(speed)) {
-      state.speed = speed;
-      msg.reply(`Updated speed to ${state.speed}.`);
-    }
-  },
+    /** @param {Discord.VoiceChannel} voiceChannel */
+    _leave(voiceChannel) {
+      voiceChannel.leave();
+      state.voiceConnection = null;
+    },
+
+    /** @param {string[]} listeningChannels */
+    _setListeningChannels(listeningChannels) {
+      state.listeningChannels = listeningChannels;
+
+      const { length: count } = listeningChannels;
+      const presenceText = count === 0 ? 'Run `!listen`' : `${count} channel(s)`;
+
+      console.log(`Updating presence text to: "${presenceText}".`);
+      client.user.setPresence({
+        activity: {
+          name: presenceText,
+          type: 'WATCHING',
+          url: process.env.BOT_PRESENCE_URL,
+        },
+      });
+    },
+  };
+
+  const publicCommands = {
+    /** @type {OnMessageCallback} */
+    async join(msg) {
+      const { channel: voiceChannel } = msg.member.voice;
+
+      if (voiceChannel) {
+        await internalCommands.joinVoiceChannel(voiceChannel);
+      } else {
+        msg.reply('You have to be in a voice channel.');
+      }
+    },
+    /** @type {OnMessageCallback} */
+    kick(msg) {
+      const { channel: voiceChannel } = msg.guild.me.voice;
+      if (voiceChannel) {
+        internalCommands.leave(voiceChannel);
+      }
+    },
+    /** @type {OnMessageCallback} */
+    listen(msg) {
+      const { id: channelId } = msg.channel;
+      if (state.listeningChannels.includes(channelId)) {
+        msg.reply("I'm already listening to this channel.");
+        return;
+      }
+
+      internalCommands.setListeningChannels([...state.listeningChannels, channelId]);
+      msg.reply("I'm now listening to this channel.");
+    },
+    /** @type {OnMessageCallback} */
+    list(msg) {
+      const channelNames = state.listeningChannels.map((channelId) => `<#${channelId}>`).join(', ');
+
+      msg.reply(`I'm listening to ${state.listeningChannels.length} channels (${channelNames}).`);
+    },
+    /** @type {OnMessageCallback} */
+    unlisten(msg) {
+      const { id: channelIdToRemove } = msg.channel;
+      if (state.listeningChannels.includes(channelIdToRemove)) {
+        internalCommands.setListeningChannels(
+          state.listeningChannels.filter((channelId) => channelId !== channelIdToRemove),
+        );
+        msg.reply("I'm no longer listening to this channel.");
+      }
+    },
+    /** @type {OnMessageCallback} */
+    speed(msg) {
+      const parts = msg.content.split(' ');
+      const speed = Number(parts[parts.length - 1]);
+      if (!Number.isNaN(speed)) {
+        state.speed = speed;
+        msg.reply(`Updated speed to ${state.speed}.`);
+      }
+    },
+  };
+
+  return {
+    ...publicCommands,
+    ...internalCommands,
+  };
 };
 
 const availableCommands = Object.keys(commands);
@@ -140,8 +172,10 @@ client.on('ready', () => {
 });
 
 client.on('message', async (msg) => {
-  // Ignore own messages
+  const state = states[msg.guild.id] ?? createDefaultState();
+
   if (msg.member.id === state.myUserId) {
+    // Ignore own messages
     return;
   }
 
@@ -196,6 +230,8 @@ client.on('message', async (msg) => {
 });
 
 client.on('voiceStateUpdate', (from, to) => {
+  const serverId = from.guild.id;
+  const state = states[serverId];
   if (!state.voiceConnection?.channel) {
     return;
   }
@@ -206,6 +242,8 @@ client.on('voiceStateUpdate', (from, to) => {
 
   // Leave when the bot becomes alone
   if (channelWithBot && channelWithBot.members.array().length <= 1) {
+    botInstances[serverId];
+    // TODO
     internalCommands.leave(channelWithBot);
   }
 });
@@ -217,13 +255,15 @@ client.login(process.env.DISCORD_CLIENT_SECRET);
 const shutdown = () => {
   console.log('Received exit event. Stopping bot...');
 
-  console.log('Leaving voice channel...');
-  if (state.voiceConnection) {
-    internalCommands.leave(state.voiceConnection.channel);
+  const channels = Object.values(states).filter(({ voiceConnection }) => voiceConnection);
+  if (channels.length > 0) {
+    console.log(`Leaving ${channels.length} voice channel(s)...`);
+    // TODO
+    channels.forEach((channel) => internalCommands.leave(channel));
   }
 
   console.log('Saving state to file...');
-  persistState(state);
+  persistState(states);
 
   console.log('See you again!');
 };

@@ -15,14 +15,18 @@ const cleanText = (text) => {
     .trim();
 };
 
-const persistState = (state) => {
-  const data = {};
+const persistState = (states) => {
+  const savedStates = {};
 
-  persistentStateKeys.forEach((key) => {
-    data[key] = state[key];
+  Object.entries(states).forEach(([serverId, serverState]) => {
+    const savedServerState = {};
+    persistentStateKeys.forEach((key) => {
+      savedServerState[key] = serverState[key];
+    });
+    savedStates[serverId] = savedServerState;
   });
 
-  fs.writeFileSync(PERSISTENT_FILE, JSON.stringify(data));
+  fs.writeFileSync(PERSISTENT_FILE, JSON.stringify(savedStates));
 };
 
 /** @returns {State|null} state */
